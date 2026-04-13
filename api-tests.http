@@ -1,0 +1,55 @@
+# REST CLI API Tests for Nimbuzki Store
+# To run these, install the "REST Client" extension in VS Code.
+# Click "Send Request" above each endpoint.
+
+@baseUrl = http://localhost:3000
+
+### 1. Create an Admin User
+# Modify the payload as needed
+POST {{baseUrl}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "name": "Admin Tester",
+  "email": "admin@nimbuzki.com",
+  "password": "password123",
+  "confirmPassword": "password123"
+}
+
+### 2. Login
+# Note: You will need to manually change this user's role to "admin" 
+# inside MongoDB Compass to test the Admin APIs below!
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@nimbuzki.com",
+  "password": "password123"
+}
+
+### 3. GET All Categories (Public)
+GET {{baseUrl}}/api/categories
+
+### 4. POST Create Category (Requires Admin Auth Cookie)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Electronics"
+}
+
+### 5. GET All Products (Public)
+GET {{baseUrl}}/api/products
+
+### 6. POST Create Product (Requires Admin Auth Cookie)
+# Replace category ID with the generated ID from the Category step!
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Wireless Mouse",
+  "description": "Ergonomic wireless mouse",
+  "price": 25.99,
+  "stock": 100,
+  "category": "REPLACE_WITH_CATEGORY_ID"
+}
