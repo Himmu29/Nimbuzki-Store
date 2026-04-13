@@ -8,6 +8,8 @@ const ProductSchema = new mongoose.Schema(
     images: [{ type: String }],
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     stock: { type: Number, required: true, default: 0 },
+    isFeatured: { type: Boolean, default: false },
+    discountPrice: { type: Number },
     specifications: {
       type: Map,
       of: String,
