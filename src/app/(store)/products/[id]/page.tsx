@@ -3,7 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useCart } from "@/lib/contexts/CartContext";
-import { ArrowLeft, ShoppingCart, Check, Star, ShieldCheck, Box } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Check, Star, ShieldCheck, Box, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import QuantitySelector from "@/components/store/QuantitySelector";
+import ProductImageGallery from "@/components/store/ProductImageGallery";
+import FeaturedProducts from "@/components/store/FeaturedProducts";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -12,8 +16,9 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [added, setAdded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   
-  const { addToCart, user } = useCart(); // Assuming useCart exposes `user` if needed, wait, AuthContext exposes user. Let's assume AddToCart handles auth check or throws.
+  const { addToCart } = useCart();
 
   useEffect(() => {
     async function fetchProduct() {
@@ -36,10 +41,15 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     setAddingToCart(true);
-    await addToCart(product._id, 1);
+    await addToCart(product._id, quantity);
     setAddingToCart(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleBuyNow = () => {
+    // Redirect directly to checkout with productId and quantity as requested
+    router.push(`/checkout?productId=${product._id}&quantity=${quantity}`);
   };
 
   if (loading) {
@@ -54,26 +64,25 @@ export default function ProductDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <button onClick={() => router.back()} className="inline-flex items-center text-indigo-600 font-medium mb-8 hover:underline">
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back
-      </button>
+      {/* Breadcrumb Navigation */}
+      <nav className="flex items-center text-sm font-medium text-gray-500 mb-8">
+        <Link href="/" className="hover:text-indigo-600 transition-colors">Home</Link>
+        <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
+        <span className="hover:text-indigo-600 transition-colors cursor-pointer">
+          {product.category?.name || "Category"}
+        </span>
+        <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
+        <span className="text-gray-900 truncate max-w-[200px] sm:max-w-md">{product.name}</span>
+      </nav>
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-16">
-        {/* Product Images */}
+        {/* Product Images - Left Side */}
         <div className="mb-10 lg:mb-0">
-          <div className="aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-100 relative shadow-sm">
-            {product.images && product.images.length > 0 ? (
-               <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-            ) : (
-               <div className="w-full h-full flex items-center justify-center text-gray-400">
-                 <Box className="w-24 h-24 text-gray-200" />
-               </div>
-            )}
-          </div>
+          <ProductImageGallery images={product.images || []} productName={product.name} />
         </div>
 
-        {/* Product Details */}
-        <div className="flex flex-col justify-center">
+        {/* Product Details - Right Side */}
+        <div className="flex flex-col">
           <p className="text-indigo-600 font-bold mb-2 tracking-wide uppercase text-sm">
             {product.category?.name || "Premium Component"}
           </p>
@@ -82,9 +91,19 @@ export default function ProductDetailPage() {
           </h1>
           
           <div className="flex items-center gap-4 mb-6">
-            <span className="text-3xl font-extrabold text-gray-900">${product.price.toFixed(2)}</span>
-            <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-               <ShieldCheck className="w-4 h-4" /> In Stock ({product.stock})
+            <span className="text-3xl font-extrabold text-gray-900">
+              ${product.discountPrice ? product.discountPrice.toFixed(2) : product.price.toFixed(2)}
+            </span>
+            {product.discountPrice && (
+              <span className="text-xl font-medium text-gray-400 line-through">
+                ${product.price.toFixed(2)}
+              </span>
+            )}
+            <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ml-2 ${
+              product.stock > 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+            }`}>
+               {product.stock > 0 ? <ShieldCheck className="w-4 h-4" /> : <Box className="w-4 h-4" />} 
+               {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
             </div>
           </div>
 
@@ -93,31 +112,55 @@ export default function ProductDetailPage() {
           </p>
 
           <div className="border-t border-b border-gray-100 py-6 mb-8 mt-auto">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-               <span className="flex items-center gap-2"><Star className="text-amber-400 w-5 h-5 fill-amber-400" /> 4.9/5 Average Rating</span>
-               <span className="underline cursor-pointer">Read Reviews</span>
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-6">
+               <span className="flex items-center gap-2">
+                 <Star className="text-amber-400 w-5 h-5 fill-amber-400" /> 
+                 4.9/5 Average Rating
+               </span>
+               <span className="underline cursor-pointer hover:text-indigo-600">Read Reviews</span>
             </div>
+            
+            <QuantitySelector 
+              quantity={quantity} 
+              onIncrement={() => setQuantity(q => q + 1)} 
+              onDecrement={() => setQuantity(q => q > 1 ? q - 1 : 1)}
+              max={product.stock}
+            />
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            disabled={addingToCart}
-            className={`w-full flex items-center justify-center gap-3 py-5 px-8 rounded-2xl font-bold text-lg text-white transition duration-300 shadow-lg ${
-              added 
-                ? "bg-green-500 hover:bg-green-600 shadow-green-500/30" 
-                : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30"
-            }`}
-          >
-            {addingToCart ? (
-               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : added ? (
-              <> <Check className="w-6 h-6" /> Added to Cart </>
-            ) : (
-              <> <ShoppingCart className="w-6 h-6" /> Add to Cart </>
-            )}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={handleAddToCart}
+              disabled={addingToCart || product.stock === 0}
+              className={`flex-1 flex items-center justify-center gap-3 py-4 px-8 rounded-2xl font-bold text-lg transition duration-300 shadow-sm border-2 ${
+                added 
+                  ? "bg-green-500 border-green-500 text-white shadow-green-500/30" 
+                  : "bg-white border-gray-200 text-gray-900 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              }`}
+            >
+              {addingToCart ? (
+                 <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              ) : added ? (
+                <> <Check className="w-6 h-6" /> Added to Cart </>
+              ) : (
+                <> <ShoppingCart className="w-6 h-6" /> Add to Cart </>
+              )}
+            </button>
+            <button
+              onClick={handleBuyNow}
+              disabled={product.stock === 0}
+              className="flex-1 py-4 px-8 rounded-2xl font-bold text-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Buy Now
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Featured Products Section */}
+      {product.category && (
+        <FeaturedProducts categoryId={product.category._id} currentProductId={product._id} />
+      )}
     </div>
   );
 }

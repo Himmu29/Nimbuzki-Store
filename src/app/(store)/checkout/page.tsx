@@ -1,15 +1,22 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/lib/contexts/CartContext";
-import { CheckCircle2, ShieldCheck, CreditCard } from "lucide-react";
+import { CheckCircle2, ShieldCheck, CreditCard, Loader2 } from "lucide-react";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const { cart, clearCartData } = useCart();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const directProductId = searchParams.get("productId");
+  const directQuantity = parseInt(searchParams.get("quantity") || "1", 10);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [directItem, setDirectItem] = useState<any>(null);
+  const [loadingDirect, setLoadingDirect] = useState(!!directProductId);
 
   const [formData, setFormData] = useState({
     street: "",
@@ -19,10 +26,41 @@ export default function CheckoutPage() {
     country: "USA",
   });
 
+  useEffect(() => {
+    let isMounted = true;
+    if (directProductId) {
+      fetch(`/api/products/${directProductId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (isMounted) {
+            if (data && !data.error) {
+              setDirectItem({
+                product: data,
+                quantity: directQuantity
+              });
+            }
+            setLoadingDirect(false);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch direct product:", err);
+          if (isMounted) setLoadingDirect(false);
+        });
+    }
+    return () => { isMounted = false; };
+  }, [directProductId, directQuantity]);
+
+  const itemsToCheckout = useMemo(() => {
+    if (directItem) return [directItem];
+    return cart?.items || [];
+  }, [directItem, cart]);
+
   const subtotal = useMemo(() => {
-    if (!cart?.items) return 0;
-    return cart.items.reduce((total, item) => total + item.product.price * item.quantity, 0);
-  }, [cart]);
+    return itemsToCheckout.reduce((total: number, item: any) => {
+      const price = item.product.discountPrice || item.product.price;
+      return total + price * item.quantity;
+    }, 0);
+  }, [itemsToCheckout]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -33,17 +71,17 @@ export default function CheckoutPage() {
     e.preventDefault();
     setError("");
 
-    if (!cart || cart.items.length === 0) {
+    if (itemsToCheckout.length === 0) {
       setError("Your cart is empty.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const orderItems = cart.items.map((item) => ({
+      const orderItems = itemsToCheckout.map((item: any) => ({
         product: item.product._id,
         quantity: item.quantity,
-        price: item.product.price,
+        price: item.product.discountPrice || item.product.price,
       }));
 
       const res = await fetch("/api/orders", {
@@ -59,7 +97,9 @@ export default function CheckoutPage() {
       if (res.ok) {
         // Order placed successfully
         const orderData = await res.json();
-        clearCartData(); // Clean up context state
+        if (!directItem) {
+          clearCartData(); // Clean up context state if it was a cart order
+        }
         router.push(`/orders/success?orderId=${orderData._id}`);
       } else {
         const data = await res.json();
@@ -72,12 +112,23 @@ export default function CheckoutPage() {
     }
   };
 
-  // Redirect if empty cart trying to checkout directly
-  if (!cart || cart.items.length === 0) {
+  if (loadingDirect) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
+        <p className="text-gray-500 font-medium">Preparing checkout...</p>
+      </div>
+    );
+  }
+
+  // Redirect if empty trying to checkout
+  if (itemsToCheckout.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
         <h1 className="text-2xl font-bold mb-4">Your Cart is Empty</h1>
-        <button onClick={() => router.push("/cart")} className="text-indigo-600 font-medium">Return to Cart</button>
+        <button onClick={() => router.push("/")} className="text-indigo-600 font-medium hover:underline">
+          Return to Shop
+        </button>
       </div>
     );
   }
@@ -156,7 +207,7 @@ export default function CheckoutPage() {
             <h2 className="text-xl font-bold mb-6">Review Order</h2>
             
             <ul className="divide-y divide-gray-800 border-b border-gray-800 pb-6 mb-6">
-              {cart.items.map((item) => (
+              {itemsToCheckout.map((item: any) => (
                 <li key={item.product._id} className="py-4 flex gap-4">
                   <div className="h-16 w-16 bg-white rounded-xl overflow-hidden flex-shrink-0 p-1">
                      {item.product.images && item.product.images.length > 0 ? (
@@ -168,11 +219,13 @@ export default function CheckoutPage() {
                       )}
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
-                    <h3 className="text-sm font-bold truncate">{item.product.name}</h3>
+                    <h3 className="text-sm font-bold truncate max-w-[150px]">{item.product.name}</h3>
                     <p className="text-xs text-gray-400 mt-1">Qty: {item.quantity}</p>
                   </div>
                   <div className="flex flex-col justify-center text-right">
-                    <p className="font-bold">${(item.product.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-bold">
+                      ${((item.product.discountPrice || item.product.price) * item.quantity).toFixed(2)}
+                    </p>
                   </div>
                 </li>
               ))}
@@ -210,5 +263,18 @@ export default function CheckoutPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
+        <p className="text-gray-500 font-medium">Loading checkout...</p>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
