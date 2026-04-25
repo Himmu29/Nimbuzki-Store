@@ -40,6 +40,7 @@ export default function Navbar() {
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileShopOpen, setIsMobileShopOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCategories() {
@@ -151,20 +152,45 @@ export default function Navbar() {
               {authLoading ? (
                 <div className="h-10 w-24 bg-gray-100 animate-pulse rounded-xl"></div>
               ) : user ? (
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 pl-2 pr-4 py-1.5 bg-gray-50 rounded-full border border-gray-100">
+                <div 
+                  className="relative group"
+                  onMouseEnter={() => setIsProfileDropdownOpen(true)}
+                  onMouseLeave={() => setIsProfileDropdownOpen(false)}
+                >
+                  <button className="flex items-center gap-2 pl-2 pr-4 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-full border border-gray-100 transition-colors">
                     <div className="bg-white p-1 rounded-full shadow-sm">
                       <UserIcon className="h-4 w-4 text-indigo-600" />
                     </div>
-                    <span className="text-sm font-semibold text-gray-800 max-w-[100px] truncate">{user.name}</span>
-                  </div>
-                  <button
-                    onClick={logout}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                    title="Logout"
-                  >
-                    <LogOut className="h-5 w-5" />
+                    <span className="text-sm font-semibold text-gray-800 max-w-[100px] truncate">
+                      {user.role === "admin" ? `Admin (${user.name})` : user.name}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
+
+                  {/* Profile Dropdown */}
+                  <div className={`absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 transition-all duration-300 origin-top transform ${isProfileDropdownOpen ? 'opacity-100 scale-100 visible translate-y-0' : 'opacity-0 scale-95 invisible -translate-y-2'}`}>
+                    {user.role === "admin" && (
+                      <>
+                        <Link href="/admin" onClick={() => setIsProfileDropdownOpen(false)} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+                          Admin Panel
+                        </Link>
+                        <div className="h-px bg-gray-100 my-1"></div>
+                      </>
+                    )}
+                    <Link href="/profile" onClick={() => setIsProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+                      Profile
+                    </Link>
+                    <Link href="/orders" onClick={() => setIsProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+                      Orders
+                    </Link>
+                    <div className="h-px bg-gray-100 my-1"></div>
+                    <button
+                      onClick={() => { logout(); setIsProfileDropdownOpen(false); }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium flex items-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" /> Logout
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -236,15 +262,28 @@ export default function Navbar() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Account</p>
-                      <p className="text-lg font-bold text-gray-900">{user.name}</p>
+                      <p className="text-lg font-bold text-gray-900">{user.role === "admin" ? `Admin (${user.name})` : user.name}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => { logout(); setIsMobileMenuOpen(false); }}
-                    className="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-bold flex justify-center items-center gap-2"
-                  >
-                    <LogOut className="h-5 w-5" /> Logout
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    {user.role === "admin" && (
+                      <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 bg-indigo-50 text-indigo-600 rounded-xl font-bold flex justify-center items-center gap-2">
+                        Admin Panel
+                      </Link>
+                    )}
+                    <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 bg-gray-50 text-gray-700 rounded-xl font-bold flex justify-center items-center gap-2">
+                      Profile
+                    </Link>
+                    <Link href="/orders" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 bg-gray-50 text-gray-700 rounded-xl font-bold flex justify-center items-center gap-2">
+                      Orders
+                    </Link>
+                    <button
+                      onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                      className="w-full py-3 bg-red-50 text-red-600 rounded-xl font-bold flex justify-center items-center gap-2 mt-2"
+                    >
+                      <LogOut className="h-5 w-5" /> Logout
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">

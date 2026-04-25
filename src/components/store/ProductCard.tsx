@@ -37,7 +37,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     : 0;
 
   return (
-    <div className="group relative bg-white rounded-3xl border border-gray-100/80 overflow-hidden hover:shadow-[0_20px_50px_rgba(79,70,229,0.1)] transition-all duration-500 flex flex-col h-full min-w-[260px] max-w-[320px] shrink-0 sm:shrink">
+    <div className="group relative bg-white rounded-3xl border border-gray-100/80 overflow-hidden hover:shadow-[0_20px_50px_rgba(79,70,229,0.1)] transition-all duration-500 flex flex-col h-full min-w-[200px] sm:min-w-0 max-w-[320px] sm:max-w-none shrink-0 sm:shrink">
       
       {/* Discount Badge */}
       {hasDiscount && (

@@ -19,7 +19,7 @@ export default function FeaturedProducts({ categoryId, currentProductId }: Featu
         if (res.ok) {
           const data = await res.json();
           // Filter out the current product and slice to 4-6 items
-          const related = data.filter((p: any) => p._id !== currentProductId).slice(0, 4);
+          const related = data.filter((p: any) => p._id !== currentProductId).slice(0, 6);
           setProducts(related);
         }
       } catch (error) {
@@ -47,7 +47,7 @@ export default function FeaturedProducts({ categoryId, currentProductId }: Featu
   return (
     <div className="mt-24 border-t border-gray-100 pt-16">
       <h2 className="text-3xl font-extrabold text-gray-900 mb-8">You may also like</h2>
-      <div className="flex overflow-x-auto pb-8 -mx-4 px-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 scrollbar-hide">
+      <div className="flex overflow-x-auto pb-8 -mx-4 px-4 sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4 xl:gap-6 scrollbar-hide">
         {products.map((product) => (
           <ProductCard key={product._id} product={product} />
         ))}

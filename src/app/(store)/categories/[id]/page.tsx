@@ -37,7 +37,7 @@ export default async function CategoryDetailPage({ params }: { params: { id: str
           <p className="text-gray-500 font-medium">No products available in this category yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
           {products.map((product) => (
             <Link key={product._id.toString()} href={`/products/${product._id}`} className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition duration-300 flex flex-col">
               <div className="aspect-[4/3] bg-gray-100 overflow-hidden relative">

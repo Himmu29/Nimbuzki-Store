@@ -32,7 +32,7 @@ export default function HomeCollections() {
   }, []);
 
   // Filter deals of the day
-  const dealsOfTheDay = products.filter(p => p.isFeatured).slice(0, 4);
+  const dealsOfTheDay = products.filter(p => p.isFeatured).slice(0, 6);
 
   // Helper to extract category products
   const getCategoryProducts = (categoryName: string) => {
@@ -43,7 +43,7 @@ export default function HomeCollections() {
     // Need to safely check both.
     const catProducts = products.filter(p => 
       p.category && (p.category === cat._id || p.category._id === cat._id)
-    ).slice(0, 4);
+    ).slice(0, 6);
 
     return { catId: cat._id, products: catProducts };
   };

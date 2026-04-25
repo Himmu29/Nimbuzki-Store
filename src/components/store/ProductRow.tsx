@@ -26,7 +26,7 @@ export default function ProductRow({ title, subtitle, viewAllLink, products, isL
           <p className="text-gray-500 font-medium">No products found in this collection.</p>
         </div>
       ) : (
-        <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-6 pt-2 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-2">
+        <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4 xl:gap-6 pb-6 pt-2 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-2">
           {products.map((product) => (
             <div key={product._id} className="snap-center">
               <ProductCard product={product} />
