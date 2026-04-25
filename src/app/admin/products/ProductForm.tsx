@@ -68,7 +68,10 @@ export default function ProductForm({
           body: uploadData,
         });
         
-        if (!uploadRes.ok) throw new Error("Image upload failed");
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errData.error || `Image upload failed (${uploadRes.status})`);
+        }
         
         const uploadResult = await uploadRes.json();
         uploadedUrls = uploadResult.urls;
@@ -249,12 +252,22 @@ export default function ProductForm({
                   <p className="font-medium text-gray-700">Click to upload new images</p>
                   <p className="text-xs mt-1">Select multiple files to upload up to 4 images</p>
                   {newFiles.length > 0 && (
-                    <div className="mt-4 flex gap-2 flex-wrap justify-center">
+                    <div className="mt-4 flex gap-3 flex-wrap justify-center z-10 relative">
                       {newFiles.map((f, i) => (
-                        <span key={i} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md flex items-center gap-1">
-                          <ImageIcon className="h-3 w-3" />
-                          {f.name}
-                        </span>
+                        <div key={i} className="relative rounded-lg overflow-hidden border border-gray-200 w-16 h-16 shadow-sm">
+                          <img src={URL.createObjectURL(f)} alt="Preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setNewFiles(prev => prev.filter((_, index) => index !== i));
+                            }}
+                            className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl-md opacity-80 hover:opacity-100 transition"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -278,7 +291,7 @@ export default function ProductForm({
               className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition flex items-center gap-2 disabled:opacity-50"
             >
               {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              {loading ? "Saving..." : (product ? "Update Product" : "Save Product")}
+              {loading ? (newFiles.length > 0 ? "Uploading & Saving..." : "Saving...") : (product ? "Update Product" : "Save Product")}
             </button>
           </div>
         </form>

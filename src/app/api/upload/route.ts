@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
-import { writeFile } from "fs/promises";
-import path from "path";
+import cloudinary from "@/lib/cloudinary";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,18 +17,25 @@ export async function POST(request: NextRequest) {
     }
 
     const urls: string[] = [];
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const filePath = path.join(uploadDir, filename);
+      const uploadPromise = new Promise<string>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "nimbuzki/products" },
+          (error, result) => {
+            if (error) reject(error);
+            else if (result) resolve(result.secure_url);
+            else reject(new Error("Unknown upload error"));
+          }
+        );
+        uploadStream.end(buffer);
+      });
 
-      await writeFile(filePath, buffer);
-      urls.push(`/uploads/products/${filename}`);
+      const url = await uploadPromise;
+      urls.push(url);
     }
 
     return NextResponse.json({ urls }, { status: 201 });
